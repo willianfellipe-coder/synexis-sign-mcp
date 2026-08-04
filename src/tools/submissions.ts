@@ -90,10 +90,20 @@ export function registerSubmissionTools(client: SynexisClient) {
       },
     },
     {
-      name: "cancel_submission" as const,
-      description: "Cancela um envio pendente. Envios já completados não podem ser cancelados.",
+      // Antes se chamava `cancel_submission` — e mentia. `DELETE /api/submissions/:id`
+      // só grava `archived_at`: o envio some da tela do remetente e o signatário continua
+      // recebendo cobrança e achando que precisa assinar. Cancelar de verdade (gravar
+      // `canceled_at`, encerrar a trilha e avisar os pendentes) roda em `Submissions::Cancel`,
+      // que a API REST não expõe — só a web e o MCP embutido da plataforma.
+      name: "archive_submission" as const,
+      description:
+        "Arquiva um envio: ele sai das listagens da conta. ATENÇÃO — isto NÃO é cancelamento: " +
+        "os signatários pendentes continuam com o link válido, seguem recebendo cobranças e " +
+        "ainda podem assinar. Para cancelar de verdade (bloquear os pendentes e avisá-los por " +
+        "e-mail), use o botão Cancelar no painel ou a tool `cancel_submission` do MCP embutido " +
+        "da plataforma (POST /mcp).",
       schema: {
-        submission_id: z.number().int().describe("ID do envio a cancelar"),
+        submission_id: z.number().int().describe("ID do envio a arquivar"),
       },
       handler: async (params: { submission_id: number }) => {
         const result = await client.delete(`/api/submissions/${params.submission_id}`);

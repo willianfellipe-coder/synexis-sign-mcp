@@ -203,8 +203,9 @@ export const ListSubmissionsSchema = z.object({
   limit: z.number().int().min(1).max(100).optional().default(10),
 });
 
-export const CancelSubmissionSchema = z.object({
-  submission_id: z.number().int().describe("ID do envio a cancelar"),
+// Arquivar ≠ cancelar: ver o comentário em tools/submissions.ts.
+export const ArchiveSubmissionSchema = z.object({
+  submission_id: z.number().int().describe("ID do envio a arquivar"),
 });
 
 export const ListContactsSchema = z.object({
@@ -242,7 +243,7 @@ export type CreateTemplateFromHtmlParams = z.infer<typeof CreateTemplateFromHtml
 export type CreateSubmissionParams = z.infer<typeof CreateSubmissionSchema>;
 export type GetSubmissionParams = z.infer<typeof GetSubmissionSchema>;
 export type ListSubmissionsParams = z.infer<typeof ListSubmissionsSchema>;
-export type CancelSubmissionParams = z.infer<typeof CancelSubmissionSchema>;
+export type ArchiveSubmissionParams = z.infer<typeof ArchiveSubmissionSchema>;
 export type ListContactsParams = z.infer<typeof ListContactsSchema>;
 export type CreateContactParams = z.infer<typeof CreateContactSchema>;
 export type UpdateContactParams = z.infer<typeof UpdateContactSchema>;

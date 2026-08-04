@@ -1,21 +1,58 @@
-# CLAUDE.md — Synexis Sign MCP Server
+# CLAUDE.md — Synexis Sign MCP Server (APOSENTADO)
 
-## O que é
+## ⚠️ Leia antes de qualquer coisa
 
-Servidor MCP (Model Context Protocol) standalone que wrappeia a API REST do Synexis Sign. Permite que agentes (Claude, Hermes, OpenClaw) interajam com templates, envios, contatos e webhooks.
+**Este repositório foi aposentado em 2026-08-03.** Não implemente features novas aqui, não
+adicione tools, não atualize dependências. Se alguém pedir para "adicionar uma tool ao MCP
+do Synexis Sign", o lugar certo é a plataforma:
 
-**Repo:** `willianfellipe-coder/synexis-sign-mcp` · **Stack:** Node 22 + TypeScript + `@modelcontextprotocol/sdk` + Zod
+```
+Synexis Sign - Plataforma/lib/mcp/tools/
+```
+
+O servidor MCP oficial é **embutido na plataforma** (`POST /mcp`, Streamable HTTP, spec
+`2025-11-25`, token próprio em Configurações → MCP). Contrato completo em
+`Synexis Sign - Plataforma/docs/synexis/MCP.md`.
+
+Exceções que justificam mexer aqui: corrigir dano silencioso (tool cujo nome promete uma
+coisa e o efeito é outra) ou atualizar a documentação de aposentadoria. Nada mais.
+
+## O que este repo era
+
+Servidor MCP standalone (Node 22 + TypeScript + `@modelcontextprotocol/sdk` + Zod) que
+wrappeava a API REST do Synexis Sign por stdio. 14 tools, ~35% de cobertura do
+`docs/openapi.json` da plataforma. Nunca foi publicado no npm nem configurado em nenhum
+cliente.
+
+**Repo:** `willianfellipe-coder/synexis-sign-mcp`
 
 ## Workspace
 
 ```
 Synexis Sign/
-├── Synexis Sign - Plataforma/    ← API REST que este MCP wrappeia
+├── Synexis Sign - Plataforma/    ← API REST + MCP oficial embutido (lib/mcp/)
 ├── Synexis Sign - Landing page/  ← site institucional
-└── Synexis Sign - MCP/           ← este repo
+└── Synexis Sign - MCP/           ← este repo (aposentado)
 ```
 
-## Desenvolvimento
+## Onde está a verdade sobre a API
+
+Não confie nas tabelas deste repo — elas congelaram em 2026-07-26. As fontes autoritativas
+ficam na plataforma:
+
+| O quê | Onde |
+|---|---|
+| Spec OpenAPI (37 operações) | `Synexis Sign - Plataforma/docs/openapi.json` |
+| Guia da API REST | `.../docs/synexis/API.md` |
+| MCP embutido (oficial) | `.../docs/synexis/MCP.md` e `lib/mcp/` |
+| Rotas | `.../config/routes.rb` + `config/initializers/synexis_routes.rb` |
+
+Detalhe que morde: várias rotas da API (`/templates/pdf`, `/docx`, `/html`,
+`/templates/:id/bulk`) **não estão em `config/routes.rb`** — são registradas por load hooks
+em `config/initializers/synexis_routes.rb`, para manter o `routes.rb` rebaseável contra o
+upstream do DocuSeal.
+
+## Desenvolvimento (referência)
 
 ```bash
 npm run dev        # tsx src/server.ts
@@ -23,7 +60,8 @@ npm run build      # tsc → dist/
 npm run typecheck  # tsc --noEmit
 ```
 
-**Auth:** `X-Auth-Token` header (token de API do tenant). Configurado via env vars.
+**Auth:** `X-Auth-Token` (token da API REST, Configurações → API). Não confundir com o
+`McpToken` do MCP embutido, que é `Authorization: Bearer` e sai de Configurações → MCP.
 
 ## Estrutura
 
@@ -34,46 +72,26 @@ src/
 ├── types.ts           # tipos TS + schemas Zod
 └── tools/
     ├── index.ts       # registerAllTools() → 14 tools
-    ├── templates.ts   # list, get, create_from_pdf, create_from_html
-    ├── submissions.ts # create, get, list, cancel
+    ├── templates.ts   # list, get, create_from_pdf, create_from_html (quebrada)
+    ├── submissions.ts # create, get, list, archive
     ├── contacts.ts    # list, create, update, delete
     ├── webhooks.ts    # list
     └── account.ts     # get_usage
 ```
 
-## Testar
+## Dívidas conhecidas (não corrigir — está aposentado)
 
-```bash
-# Teste do protocolo MCP sem token real:
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | SYNEXIS_API_TOKEN=test npm run dev
+- `create_template_from_html` responde `422` sempre: manda `documents[].file` em base64, a
+  API espera `documents[].html` ou `html` no topo.
+- SDK 1.29.0 usando a API `server.tool()`, hoje substituída por `registerTool()`.
+- Não envia `Idempotency-Key`; não trata `429`; `client.ts` quebra em resposta não-JSON.
 
-# Teste contra produção (requer token válido):
-SYNEXIS_API_TOKEN="seu-token" npm run dev
-# Ctrl+C, depois cole um JSON-RPC de tools/call
-```
+## A única correção pós-aposentadoria
 
-## Adicionar uma nova tool
-
-1. Criar arquivo em `src/tools/novo.ts` com `export function registerNovoTools(client)`
-2. Cada tool = `{ name, description, schema: { ... } (Zod), handler: async (params) => ({ content: [...] }) }`
-3. Importar e adicionar ao spread em `src/tools/index.ts`
-4. `npm run typecheck && npm run build`
-5. Testar com `echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | SYNEXIS_API_TOKEN=test npm run dev`
-
-## Endpoints da API (referência)
-
-| Recurso | Base |
-|----------|------|
-| Templates | `GET/POST /api/templates`, `POST /api/templates/pdf`, `/api/templates/html` |
-| Submissions | `GET/POST/DELETE /api/submissions`, `/api/submissions/:id` |
-| Contacts | `GET/POST/PATCH/DELETE /api/contacts` |
-| Webhooks | `GET /api/webhooks` |
-| Account | `GET /api/account/usage` |
-
-Respostas são JSON. Coleções usam `{ data: [...], pagination: { count, next, prev } }`. Erros: `{ error: "mensagem" }`.
-
-## Deploy
-
-- **Não há deploy automático.** O MCP roda localmente em cada cliente (stdio).
-- `npm run build` gera `dist/` pronto para `node dist/server.js`
-- Para distribuir como binário global: `npm install -g .` (usa o campo `bin` do package.json)
+`cancel_submission` → **`archive_submission`**. Ela fazia `DELETE /api/submissions/:id`, que
+só grava `archived_at` — o envio sumia da tela do remetente e os signatários seguiam com o
+link válido, sendo cobrados. Cancelar de verdade é `Submissions::Cancel` (grava
+`canceled_at`, encerra a trilha, avisa os pendentes), disponível só na web e no MCP
+embutido. **A API REST não expõe cancelamento.** Se um dia precisar, abra
+`POST /api/submissions/:id/cancel` na plataforma reusando `Submissions::Cancel` — não
+replique a lógica aqui.

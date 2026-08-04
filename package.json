@@ -1,7 +1,8 @@
 {
   "name": "synexis-sign-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for Synexis Sign — agents interact with templates, submissions, contacts, and webhooks via the REST API",
+  "version": "1.1.0",
+  "description": "APOSENTADO (2026-08-03) — use o MCP embutido da plataforma em POST /mcp. Servidor MCP standalone que wrappeava a API REST do Synexis Sign.",
+  "private": true,
   "type": "module",
   "main": "dist/server.js",
   "bin": {
