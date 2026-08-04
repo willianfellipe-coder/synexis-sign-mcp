@@ -3,8 +3,8 @@
 > **Este repositório foi aposentado em 2026-08-03 e não recebe mais manutenção.**
 >
 > O caminho oficial para agentes de IA operarem o Synexis Sign é o **MCP embutido na
-> própria plataforma**, documentado em
-> [`docs/synexis/MCP.md`](../Synexis%20Sign%20-%20Plataforma/docs/synexis/MCP.md).
+> própria plataforma** (`POST https://app.synexissign.com/mcp`), documentado em
+> `docs/synexis/MCP.md` no repositório da plataforma.
 >
 > O código continua aqui como referência histórica. Não instale em clientes novos.
 
@@ -62,9 +62,10 @@ Configurações → API.
 | `list_templates`, `get_template`, `create_template_from_pdf`, `create_template_from_html` | **sem equivalente, de propósito.** O MCP embutido é document-first: um agente que chama `create_template` recebe `-32601`. Template é complexidade que o agente não precisa carregar — mande o PDF direto. |
 | `list_webhooks`, `get_account_usage` | sem equivalente — use a API REST (`GET /api/webhooks`, `GET /api/account/usage`) |
 
-O que não tem tool continua acessível pela **API REST**, que segue viva e mantida:
-[`docs/synexis/API.md`](../Synexis%20Sign%20-%20Plataforma/docs/synexis/API.md) e o spec
-completo em `docs/openapi.json` (37 operações).
+O que não tem tool continua acessível pela **API REST**, que segue viva e mantida. A
+referência é `docs/synexis/API.md` e o spec completo `docs/openapi.json` (37 operações),
+ambos no repositório da plataforma; a documentação interativa fica em
+`https://app.synexissign.com/settings/api_docs`.
 
 ## Estado do código no momento da aposentadoria
 
